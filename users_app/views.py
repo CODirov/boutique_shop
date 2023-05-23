@@ -1,62 +1,41 @@
-from django.contrib import auth, messages
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
-from django.urls import reverse
+from django.contrib.messages.views import SuccessMessageMixin
+from django.views.generic.edit import CreateView, UpdateView
+from django.contrib.auth.views import LoginView
+from django.urls import reverse_lazy
 
 from .forms import UserLoginForm, UserRegisterForm, ProfileForm
 from products_app.models import Basket
+from .models import Users
 
-def login_view(request):
-    if request.method == "POST":
-        form = UserLoginForm(data=request.POST)
-        if form.is_valid():
-            username = request.POST['username']
-            password = request.POST['password']
-            user = auth.authenticate(username=username, password=password)
-            print("1-if ishladi")
-            if user:
-                auth.login(request, user)
-                return HttpResponseRedirect(reverse('main-page'))
-    else:
-        form = UserLoginForm()
-    context = {
-        'form': form
-    }
-    return render(request, "users/login.html", context)
 
-def register_view(request):
-    if request.method == "POST":
-        form = UserRegisterForm(data=request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Siz muvaffaqiyatli tarzda ro'yxatdan o'tdingiz!")
-            return HttpResponseRedirect(reverse("users:login"))
-    else:
-        form = UserRegisterForm()
-    context = {
-        "form": form
-    }
-    return render(request, "users/register.html", context)
+class UserLoginView(LoginView):
+    form_class = UserLoginForm
+    template_name = "users/login.html"
 
-@login_required
-def profile_view(request):
-    if request.method == "POST":
-        form = ProfileForm(data=request.POST, instance=request.user, files=request.FILES)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Ma'lumotlar yangilandi!")
-            return HttpResponseRedirect(reverse("users:profile"))
-        else:
-            print(form.errors)
-    else:
-        form = ProfileForm(instance=request.user)
-    context = {
-        "form": form,
-        "baskets": Basket.objects.filter(user=request.user)
-    }
-    return render(request, "users/profile.html", context)
 
-def logout_view(request):
-    auth.logout(request)
-    return HttpResponseRedirect(reverse("main-page"))
+class UserRegisterView(SuccessMessageMixin, CreateView):
+    model = Users
+    form_class = UserRegisterForm
+    template_name = "users/register.html"
+    success_url = reverse_lazy("users:login")
+    success_message = "Siz muvaffaqiyatli tarzda ro'yxatdan o'tdingiz!"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context["title"] = "Ro'yxatdan o'tish"
+        return context
+
+
+class UserProfileView(SuccessMessageMixin, UpdateView):
+    model = Users
+    form_class = ProfileForm
+    template_name = "users/profile.html"
+    success_message = "Ma'lumotlar yangilandi!"
+    def get_success_url(self):
+        return reverse_lazy("users:profile", args=(self.object.id, ))
+
+    def get_context_data(self, **kwargs):
+        context = super(UserProfileView, self).get_context_data()
+        context["title"] = "Shaxsiy kobinet"
+        context["baskets"] = Basket.objects.filter(user=self.object)
+        return context
