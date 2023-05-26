@@ -16,6 +16,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+DOMAIN_NAME = "http://127.0.0.1:8000/"
 
 # Application definition
 
@@ -130,3 +131,20 @@ AUTH_USER_MODEL = 'users_app.Users'
 LOGIN_URL = "/users/login"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+#sending email
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'itschoolsam@gmail.com'
+EMAIL_HOST_PASSWORD = "tojkjkmsiolrbqtv"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+
+# EMAIL_HOST = "smtp.yandex.com"
+# EMAIL_PORT = 465
+# EMAIL_HOST_USER = "kodirovteacher@yandex.ru"
+# EMAIL_HOST_PASSWORD = "2wZHUv_d8,QLq+d"
+# EMAIL_USE_SSL = True
