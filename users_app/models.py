@@ -9,7 +9,7 @@ from django.conf import settings
 class Users(AbstractUser):
     image = models.ImageField(upload_to="users_image", null=True, blank=True)
     is_verified = models.BooleanField(default=False)
-    email = models.EmailField(unique=True, blank=True)
+    email = models.EmailField(blank=True)
 
 class EmailVerification(models.Model):
     code = models.UUIDField(unique=True)
