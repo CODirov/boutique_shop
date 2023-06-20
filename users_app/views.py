@@ -39,7 +39,6 @@ class UserProfileView(SuccessMessageMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super(UserProfileView, self).get_context_data()
         context["title"] = "Shaxsiy kobinet"
-        context["baskets"] = Basket.objects.filter(user=self.object)
         return context
 
 class EmailVerificationView(TemplateView):

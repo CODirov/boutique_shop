@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.humanize',
 
     'allauth',
     'allauth.account',
@@ -36,7 +37,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
 
     'products_app',
-    'users_app'
+    'users_app',
+    'orders_app',
 ]
 
 MIDDLEWARE = [
@@ -79,6 +81,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'products_app.context_processors.basket'
             ],
         },
     },
@@ -93,7 +96,7 @@ WSGI_APPLICATION = 'store_pr.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'boutique_db',
+        'NAME': 'store_sql',
         'USER': 'store_project',
         'PASSWORD': '1234',
     }
@@ -187,3 +190,8 @@ SOCIALACCOUNT_PROVIDERS = {
 
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
 CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379'
+
+# stripe
+
+STRIPE_PUBLIC_KEY = 'pk_test_51NL03HIwBnl0b9D6uUt4rs1TQdrQQaLRA5WPJK4TapVcloJgJafxS8kBrhKqYmPTMe1Vgl54EcjboX25Wibv1dLG00aKjT9U9D'
+STRIPE_SECRET_KEY = 'sk_test_51NL03HIwBnl0b9D6FxbWr9fuKxRzfPZnoCIR8O8Qc8uk8TGZYAHal73yyNDwF8xnwDfuKYikzoGUxygim4qqkNTY00f9fcK6RK'

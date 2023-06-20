@@ -11,6 +11,7 @@ urlpatterns = [
     path('products', include("products_app.urls")),
     path('users/', include("users_app.urls")),
     path('accounts/', include('allauth.urls')),
+    path('orders/', include('orders_app.urls')),
 ]
 if settings.DEBUG:
     urlpatterns.append(path("__debug__/", include("debug_toolbar.urls")))

@@ -33,7 +33,7 @@
         <h4 class="float-right">{{ baskets.get_total_price }} so'm</h4>
     </div>
 </div>
-<a class="btn btn-success btn-lg float-right" href="../orders/order-create.html">
+<a class="btn btn-success btn-lg float-right" href="{% url 'orders:order_create' %}">
     Buyurtmani rasmiylashtirish
 </a>
 {% else %}
