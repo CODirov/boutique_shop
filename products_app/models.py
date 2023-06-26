@@ -1,6 +1,11 @@
+import stripe
+
 from django.db import models
+from django.conf import settings
 
 from users_app.models import Users
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class ProductCategory(models.Model):
     name = models.CharField(max_length=125)
@@ -17,8 +22,9 @@ class ProductCategory(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=200)
     descriptions = models.TextField()
-    price = models.DecimalField(max_digits=9, decimal_places=2)
+    price = models.DecimalField(max_digits=16, decimal_places=2)
     image = models.ImageField(upload_to="product-image")
+    stripe_product_price_id = models.CharField(max_length=128, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=0)
     category = models.ForeignKey(to=ProductCategory, on_delete=models.CASCADE)
 
@@ -29,6 +35,19 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.category} --> {self.name}"
 
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if not self.stripe_product_price_id:
+            stripe_product_price = self.create_stripe_product_price()
+            self.stripe_product_price_id = stripe_product_price['id']
+        super(Product, self).save(force_insert=False, force_update=False, using=None, update_fields=None)
+
+    def create_stripe_product_price(self):
+        stripe_product = stripe.Product.create(name=self.name)
+        stripe.Price.create(
+            product=stripe_product,
+            unit_amount=round(self.price*100),
+            currency="uzs",
+        )
 
 class BasketsQuerySet(models.QuerySet):
     def get_total_quantity(self):
