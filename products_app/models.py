@@ -43,11 +43,12 @@ class Product(models.Model):
 
     def create_stripe_product_price(self):
         stripe_product = stripe.Product.create(name=self.name)
-        stripe.Price.create(
-            product=stripe_product,
+        stripe_product_price = stripe.Price.create(
+            product=stripe_product['id'],
             unit_amount=round(self.price*100),
             currency="uzs",
         )
+        return stripe_product_price
 
 class BasketsQuerySet(models.QuerySet):
     def get_total_quantity(self):
@@ -68,3 +69,12 @@ class Basket(models.Model):
     
     def get_price(self):
         return self.product.price*self.quantity
+
+    def de_json(self):
+        basket_item = {
+            'product_name': self.product.name,
+            'quantity': self.quantity,
+            'price': float(self.product.price),
+            'sum': float(self.get_price())
+        }
+        return basket_item

@@ -5,11 +5,15 @@ from http import HTTPStatus
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
 from django.views.generic.edit import CreateView
+from django.views.generic.list import ListView
+from django.views.generic.detail import DetailView
 from django.urls import reverse_lazy, reverse
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
 
 from .forms import OrderForm
+from .models import Order
+from products_app.models import Basket
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -26,6 +30,30 @@ class CanceledTemplateView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "Harid bekor qilindi"
+        return context
+
+class OrderListView(ListView):
+    template_name = "orders/orders.html"
+    queryset = Order.objects.all()
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderListView, self).get_context_data(**kwargs)
+        context['title'] = "Buyurtmalar"
+        return context
+
+    def get_queryset(self):
+        queryset = super(OrderListView, self).get_queryset()
+        return queryset.filter(initiator=self.request.user)
+
+
+class OrderDetailView(DetailView):
+    template_name = "orders/order.html"
+    model = Order
+
+    def get_context_data(self, **kwargs):
+        context = super(OrderDetailView, self).get_context_data(**kwargs)
+        context["title"] = f"buyurtma #{self.object.id}"
+        return context
 
 class OrderCreateView(CreateView):
     template_name = 'orders/order-create.html'
@@ -34,16 +62,19 @@ class OrderCreateView(CreateView):
 
     def post(self, request, *args, **kwargs):
         super(OrderCreateView, self).post(request, *args, **kwargs)
+        baskets = Basket.objects.filter(user=self.request.user)
+        line_items = []
+        for basket in baskets:
+            item = {
+                'price': basket.product.stripe_product_price_id,
+                'quantity': basket.quantity,
+            }
+            line_items.append(item)
         checkout_session = stripe.checkout.Session.create(
-            line_items=[
-                {
-                    # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-                    'price': 'price_1NL0QRIwBnl0b9D6dy1lscAI',
-                    'quantity': 1,
-                },
-            ],
+            line_items=line_items,
             metadata={'order_id': self.object.id},
             mode='payment',
+            payment_method_types=['card'],
             success_url="{}{}".format(settings.DOMAIN_NAME, reverse('orders:order_success')),
             cancel_url="{}{}".format(settings.DOMAIN_NAME, reverse('orders:order_canceled')),
         )
@@ -78,20 +109,14 @@ def stripe_webhook_view(request):
 
     # Handle the checkout.session.completed event
     if event['type'] == 'checkout.session.completed':
-        # Retrieve the session. If you require line items in the response, you may include them by expanding line_items.
-        session = stripe.checkout.Session.retrieve(
-            event['data']['object']['id'],
-            expand=['line_items'],
-        )
-
-        line_items = session.line_items
+        session = event['data']['object']
         # Fulfill the purchase...
-        fulfill_order(line_items)
+        fulfill_order(session)
 
     # Passed signature verification
     return HttpResponse(status=200)
 
-def fulfill_order(line_items):
-  print(line_items)
-  # order_id = session.metadata.order_id
-  # print("bu id:", order_id)
+def fulfill_order(session):
+    order_id = int(session.metadata.order_id)
+    order = Order.objects.get(id=order_id)
+    order.update_after_payment()
